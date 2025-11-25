@@ -12,10 +12,12 @@ class AuthService {
   }
   // Generate cookie options
   getCookieOptions() {
+    const isProduction = process.env.NODE_ENV === "production";
+
     return {
-      httpOnly: true, 
-      secure: true,
-      sameSite: "none", 
+      httpOnly: true,
+      secure: isProduction, // ✅ UBAH: hanya true di production
+      sameSite: isProduction ? "none" : "lax", // ✅ UBAH: "lax" untuk development
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
   }
@@ -68,42 +70,42 @@ class AuthService {
   }
 
   // Request password reset
-async forgotPassword(email) {
-  const user = await User.findOne({ email });
+  async forgotPassword(email) {
+    const user = await User.findOne({ email });
 
-  if (!user) {
-    throw new Error("User not found with this email");
-  }
+    if (!user) {
+      throw new Error("User not found with this email");
+    }
 
-  if (!user.isActive) {
-    throw new Error("Account is deactivated");
-  }
+    if (!user.isActive) {
+      throw new Error("Account is deactivated");
+    }
 
-  // Generate reset token
-  const resetToken = user.createPasswordResetToken();
-  await user.save({ validateBeforeSave: false });
-
-  // Send email
-  try {
-    await emailService.sendPasswordResetEmail(
-      user.email,
-      resetToken,
-      user.username
-    );
-
-    return {
-      message: "Link reset password telah dikirim ke email Anda",
-      // Tambahkan ini untuk development (hapus di production)
-      ...(process.env.NODE_ENV === "development" && { resetToken }),
-    };
-  } catch (error) {
-    // Clear token jika gagal kirim email
-    user.clearPasswordResetToken();
+    // Generate reset token
+    const resetToken = user.createPasswordResetToken();
     await user.save({ validateBeforeSave: false });
 
-    throw new Error("Gagal mengirim email. Silakan coba lagi.");
+    // Send email
+    try {
+      await emailService.sendPasswordResetEmail(
+        user.email,
+        resetToken,
+        user.username
+      );
+
+      return {
+        message: "Link reset password telah dikirim ke email Anda",
+        // Tambahkan ini untuk development (hapus di production)
+        ...(process.env.NODE_ENV === "development" && { resetToken }),
+      };
+    } catch (error) {
+      // Clear token jika gagal kirim email
+      user.clearPasswordResetToken();
+      await user.save({ validateBeforeSave: false });
+
+      throw new Error("Gagal mengirim email. Silakan coba lagi.");
+    }
   }
-}
 
   // Reset password with token
   async resetPassword(token, newPassword) {
