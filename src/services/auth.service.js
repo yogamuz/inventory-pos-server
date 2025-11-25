@@ -13,10 +13,10 @@ class AuthService {
   // Generate cookie options
   getCookieOptions() {
     return {
-      httpOnly: true, // Tidak bisa diakses via JavaScript
-      secure: process.env.NODE_ENV === "production", // HTTPS only di production
-      sameSite: "strict", // CSRF protection
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari dalam milliseconds
+      httpOnly: true, 
+      secure: true,
+      sameSite: "none", 
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     };
   }
 
