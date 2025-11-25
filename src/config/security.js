@@ -3,27 +3,19 @@ const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const hpp = require("hpp");
 
-// Ambil allowed origins dari .env
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
   : [];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow Postman / mobile (no origin)
     if (!origin) return callback(null, true);
 
-    // Cek apakah origin terdaftar
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    // Allow semua saat development
-    if (process.env.NODE_ENV === "development") {
-      return callback(null, true);
-    }
-
-    // Kalau tidak cocok → block
+    console.warn(`Blocked origin: ${origin}`);
     return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
@@ -31,7 +23,6 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200,
 };
-
 // Helmet config
 const helmetConfig = helmet({
   contentSecurityPolicy: false,

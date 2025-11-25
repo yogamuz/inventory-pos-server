@@ -16,8 +16,8 @@ class AuthService {
 
     return {
       httpOnly: true,
-      secure: isProduction, // ✅ UBAH: hanya true di production
-      sameSite: isProduction ? "none" : "lax", // ✅ UBAH: "lax" untuk development
+      secure: true, 
+      sameSite: "none", 
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
   }
