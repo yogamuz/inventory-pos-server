@@ -3,38 +3,43 @@ const authService = require("../services/auth.service");
 
 class AuthController {
   // Login
-  async login(req, res) {
-    try {
-      const { username, password } = req.body;
+async login(req, res) {
+  try {
+    const { username, password } = req.body;
 
-      // Validation
-      if (!username || !password) {
-        return res.status(400).json({
-          success: false,
-          message: "Please provide username and password",
-        });
-      }
-
-      const result = await authService.login(username, password);
-
-      // Set token ke HTTP-only cookie
-      res.cookie("token", result.token, authService.getCookieOptions());
-
-      res.status(200).json({
-        success: true,
-        message: "Login successful",
-        data: {
-          user: result.user,
-          // Token tidak perlu dikirim ke frontend
-        },
-      });
-    } catch (error) {
-      res.status(401).json({
+    if (!username || !password) {
+      return res.status(400).json({
         success: false,
-        message: error.message,
+        message: "Please provide username and password",
       });
     }
+
+    const result = await authService.login(username, password);
+
+    // Set token ke HTTP-only cookie
+    const cookieOptions = authService.getCookieOptions();
+    
+    // ✅ TAMBAH LOGGING INI:
+    console.log('Cookie Options:', cookieOptions);
+    console.log('Origin:', req.headers.origin);
+    console.log('Setting cookie for user:', result.user.username);
+    
+    res.cookie("token", result.token, cookieOptions);
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        user: result.user,
+      },
+    });
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      message: error.message,
+    });
   }
+}
 
   // Forgot Password
   async forgotPassword(req, res) {

@@ -6,9 +6,16 @@ const protect = async (req, res, next) => {
   try {
     let token;
 
+    // ✅ TAMBAH LOGGING INI:
+    console.log("=== AUTH MIDDLEWARE DEBUG ===");
+    console.log("Cookies:", req.cookies);
+    console.log("Headers:", req.headers);
+    console.log("Origin:", req.headers.origin);
+
     // Get token from cookie (prioritas pertama)
     if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
+      console.log("Token found in cookie"); // ✅ TAMBAH
     }
     // Fallback: Get token from header (untuk backward compatibility)
     else if (
@@ -16,9 +23,11 @@ const protect = async (req, res, next) => {
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
+      console.log("Token found in header"); // ✅ TAMBAH
     }
 
     if (!token) {
+      console.log("No token found!"); // ✅ TAMBAH
       return res.status(401).json({
         success: false,
         message: "Not authorized, no token provided",
