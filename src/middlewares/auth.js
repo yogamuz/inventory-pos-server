@@ -12,10 +12,11 @@ const protect = async (req, res, next) => {
     console.log("Headers:", req.headers);
     console.log("Origin:", req.headers.origin);
 
-    // Get token from cookie (prioritas pertama)
-    if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-      console.log("Token found in cookie"); // ✅ TAMBAH
+    if (req.cookies) {
+      token = req.cookies.token || req.cookies.token_fallback;
+      if (token) {
+        console.log("Token found in cookie");
+      }
     }
     // Fallback: Get token from header (untuk backward compatibility)
     else if (

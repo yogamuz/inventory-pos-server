@@ -13,13 +13,43 @@ class AuthService {
   // Generate cookie options
   getCookieOptions() {
     const isProduction = process.env.NODE_ENV === "production";
+    const isVercel = process.env.VERCEL === "1";
 
+    // Untuk development atau test
+    if (!isProduction && !isVercel) {
+      return {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      };
+    }
+
+    // Untuk production (Vercel/hosting lain)
     return {
       httpOnly: true,
-      secure: true, 
-      sameSite: "none", 
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      // Tambahan untuk compatibility mobile
+      path: "/",
+      domain: process.env.COOKIE_DOMAIN || undefined,
     };
+  }
+  // Set cookie dengan fallback untuk mobile
+  setCookieWithFallback(res, token) {
+    const cookieOptions = this.getCookieOptions();
+
+    // Set cookie utama
+    res.cookie("token", token, cookieOptions);
+
+    // Fallback: set cookie dengan sameSite: lax untuk mobile compatibility
+    if (process.env.NODE_ENV === "production") {
+      res.cookie("token_fallback", token, {
+        ...cookieOptions,
+        sameSite: "lax",
+      });
+    }
   }
 
   // Login user

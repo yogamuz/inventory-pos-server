@@ -17,14 +17,14 @@ async login(req, res) {
     const result = await authService.login(username, password);
 
     // Set token ke HTTP-only cookie
-    const cookieOptions = authService.getCookieOptions();
+    authService.setCookieWithFallback(res, result.token);
     
-    // ✅ TAMBAH LOGGING INI:
-    console.log('Cookie Options:', cookieOptions);
+    // ✅ LOGGING UNTUK DEBUG:
+    console.log('=== LOGIN COOKIE DEBUG ===');
     console.log('Origin:', req.headers.origin);
+    console.log('User-Agent:', req.headers['user-agent']);
     console.log('Setting cookie for user:', result.user.username);
-    
-    res.cookie("token", result.token, cookieOptions);
+    console.log('Cookie domain:', process.env.COOKIE_DOMAIN || 'current domain');
 
     res.status(200).json({
       success: true,
@@ -40,6 +40,7 @@ async login(req, res) {
     });
   }
 }
+
 
   // Forgot Password
   async forgotPassword(req, res) {
@@ -95,7 +96,7 @@ async resetPassword(req, res) {
       const result = await authService.resetPassword(token, password);
 
       // Set token ke HTTP-only cookie
-      res.cookie("token", result.token, authService.getCookieOptions());
+      authService.setCookieWithFallback(res, result.token);
 
       res.status(200).json({
         success: true,
@@ -129,21 +130,23 @@ async resetPassword(req, res) {
   }
   // Logout
   async logout(req, res) {
-    try {
-      // Clear cookie
-      res.clearCookie("token");
+  try {
+    // Clear both cookies with same options
+    const cookieOptions = authService.getCookieOptions();
+    res.clearCookie("token", cookieOptions);
+    res.clearCookie("token_fallback", cookieOptions);
 
-      res.status(200).json({
-        success: true,
-        message: "Logout successful",
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message,
-      });
-    }
+    res.status(200).json({
+      success: true,
+      message: "Logout successful",
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
   }
+}
 }
 
 module.exports = new AuthController();
