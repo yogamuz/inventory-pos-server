@@ -36,21 +36,33 @@ class AuthService {
       domain: process.env.COOKIE_DOMAIN || undefined,
     };
   }
-  // Set cookie dengan fallback untuk mobile
-  setCookieWithFallback(res, token) {
-    const cookieOptions = this.getCookieOptions();
+// Set cookie dengan fallback untuk mobile
+setCookieWithFallback(res, token) {
+  const cookieOptions = this.getCookieOptions();
 
-    // Set cookie utama
-    res.cookie("token", token, cookieOptions);
+  console.log('=== SET COOKIE DEBUG ===');
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Cookie Options:', JSON.stringify(cookieOptions, null, 2));
+  console.log('Token length:', token.length);
 
-    // Fallback: set cookie dengan sameSite: lax untuk mobile compatibility
-    if (process.env.NODE_ENV === "production") {
-      res.cookie("token_fallback", token, {
-        ...cookieOptions,
-        sameSite: "lax",
-      });
-    }
+  // Set cookie utama
+  res.cookie("token", token, cookieOptions);
+  console.log('✅ Main cookie set');
+
+  // Fallback untuk production
+  if (process.env.NODE_ENV === "production") {
+    const fallbackOptions = {
+      ...cookieOptions,
+      sameSite: "lax",
+    };
+    res.cookie("token_fallback", token, fallbackOptions);
+    console.log('✅ Fallback cookie set');
   }
+
+  // Log response headers untuk verifikasi
+  const setCookieHeaders = res.getHeaders()['set-cookie'];
+  console.log('Set-Cookie headers:', setCookieHeaders);
+}
 
   // Login user
   async login(username, password) {

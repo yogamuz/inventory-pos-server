@@ -23,14 +23,14 @@ const exportRoutes = require("./routes/export.routes");
 const app = express();
 
 // Security middlewares
-app.use(helmetConfig);
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(helmetConfig);
 app.use(mongoSanitize(mongoSanitizeConfig));
 app.use(xssMiddleware);
 app.use(hpp(hppConfig));
-app.use(cookieParser());
 
 // Logging middleware (only in development)
 if (process.env.NODE_ENV === "development") {
