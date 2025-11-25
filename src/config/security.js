@@ -1,88 +1,69 @@
 // src/config/security.js
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
-const xss = require("xss");
 const hpp = require("hpp");
 
-// CORS configuration
+// Ambil allowed origins dari .env
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  : [];
+
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+    // Allow Postman / mobile (no origin)
     if (!origin) return callback(null, true);
-    
-    // In production, specify allowed origins
-    const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    // PERBAIKAN: Cek indexOf ATAU development mode
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else if (process.env.NODE_ENV === "development") {
-      callback(null, true); // Allow all di development
-    } else {
-      callback(new Error("Not allowed by CORS"));
+
+    // Cek apakah origin terdaftar
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
+
+    // Allow semua saat development
+    if (process.env.NODE_ENV === "development") {
+      return callback(null, true);
+    }
+
+    // Kalau tidak cocok → block
+    return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
-  optionsSuccessStatus: 200,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200,
 };
 
-// Helmet configuration
+// Helmet config
 const helmetConfig = helmet({
-  contentSecurityPolicy: false, // Disable CSP for API
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
 });
 
-// MongoDB sanitization configuration
+// Mongo sanitize
 const mongoSanitizeConfig = {
   replaceWith: "_",
-  onSanitize: ({ req, key }) => {
-    console.warn(`Sanitized key: ${key}`);
-  },
 };
 
-// XSS middleware 
+// XSS middleware
 const xssMiddleware = (req, res, next) => {
-  // Sanitize body
-  if (req.body && typeof req.body === 'object') {
-    Object.keys(req.body).forEach((key) => {
-      if (typeof req.body[key] === "string") {
-        // Simple sanitization tanpa library xss
-        req.body[key] = req.body[key]
-          .replace(/[<>]/g, '') // Remove < >
-          .trim();
+  const sanitize = (obj) => {
+    if (!obj || typeof obj !== "object") return;
+    Object.keys(obj).forEach((key) => {
+      if (typeof obj[key] === "string") {
+        obj[key] = obj[key].replace(/[<>]/g, "").trim();
       }
     });
-  }
+  };
 
-  // Sanitize query
-  if (req.query && typeof req.query === 'object') {
-    Object.keys(req.query).forEach((key) => {
-      if (typeof req.query[key] === "string") {
-        req.query[key] = req.query[key]
-          .replace(/[<>]/g, '')
-          .trim();
-      }
-    });
-  }
-
-  // Sanitize params
-  if (req.params && typeof req.params === 'object') {
-    Object.keys(req.params).forEach((key) => {
-      if (typeof req.params[key] === "string") {
-        req.params[key] = req.params[key]
-          .replace(/[<>]/g, '')
-          .trim();
-      }
-    });
-  }
+  sanitize(req.body);
+  sanitize(req.query);
+  sanitize(req.params);
 
   next();
 };
 
-// HPP configuration (prevent parameter pollution)
+// HPP
 const hppConfig = {
-  whitelist: [], // Add parameters that should allow duplicates
+  whitelist: [],
 };
 
 module.exports = {
